@@ -9,9 +9,23 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
-      colorSchemeSeed: _accentColor,
       brightness: Brightness.light,
-      textTheme: GoogleFonts.poppinsTextTheme(),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: _accentColor,
+        primary: _accentColor,
+        brightness: Brightness.light,
+      ),
+      textTheme: GoogleFonts.poppinsTextTheme().copyWith(
+        headlineLarge: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.black87),
+        headlineMedium: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.black87),
+      ),
+      appBarTheme: const AppBarTheme(
+        centerTitle: false,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        iconTheme: IconThemeData(color: Colors.black87),
+        titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
+      ),
     );
   }
 
@@ -26,7 +40,6 @@ class AppTheme {
         secondary: _accentColor,
         surface: _surfaceColor,
         onSurface: Colors.white,
-        background: _bgColor,
       ),
       textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme).copyWith(
         headlineLarge: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
@@ -36,6 +49,7 @@ class AppTheme {
         centerTitle: false,
         elevation: 0,
         backgroundColor: Colors.transparent,
+        iconTheme: IconThemeData(color: Colors.white),
         titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
       ),
     );

@@ -38,9 +38,9 @@ class MiniPlayer extends ConsumerWidget {
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: Theme.of(context).colorScheme.surface.withOpacity(0.8),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withOpacity(0.1)),
+                border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1)),
               ),
               child: Stack(
                 children: [
@@ -61,14 +61,14 @@ class MiniPlayer extends ConsumerWidget {
                             height: 50,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(12),
-                              color: Colors.white10,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(12),
                               child: QueryArtworkWidget(
                                 id: int.tryParse(mediaItem.extras?['id']?.toString() ?? '') ?? 0,
                                 type: ArtworkType.AUDIO,
-                                nullArtworkWidget: const Icon(Icons.music_note_rounded, color: Colors.white54),
+                                nullArtworkWidget: Icon(Icons.music_note_rounded, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
                               ),
                             ),
                           ),
@@ -83,13 +83,13 @@ class MiniPlayer extends ConsumerWidget {
                                 mediaItem.title,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
                               ),
                               Text(
                                 mediaItem.artist ?? 'Unknown Artist',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.5)),
+                                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
                               ),
                             ],
                           ),
@@ -97,12 +97,12 @@ class MiniPlayer extends ConsumerWidget {
                         IconButton(
                           icon: Icon(
                             isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                           onPressed: () => isPlaying ? handler.pause() : handler.play(),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.skip_next_rounded, color: Colors.white),
+                          icon: Icon(Icons.skip_next_rounded, color: Theme.of(context).colorScheme.onSurface),
                           onPressed: () => handler.skipToNext(),
                         ),
                       ],

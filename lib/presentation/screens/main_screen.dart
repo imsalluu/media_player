@@ -61,7 +61,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
             children: [
               const Icon(Icons.security, size: 64, color: Color(0xFFFF003A)),
               const SizedBox(height: 16),
-              const Text('Storage Permission Required', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              Text('Storage Permission Required', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF003A), foregroundColor: Colors.white),

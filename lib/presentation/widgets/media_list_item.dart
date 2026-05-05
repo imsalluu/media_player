@@ -18,7 +18,7 @@ class MediaListItem extends ConsumerWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
         borderRadius: BorderRadius.circular(20),
       ),
       child: ListTile(
@@ -31,7 +31,7 @@ class MediaListItem extends ConsumerWidget {
             height: 60,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(15),
-              color: Colors.white.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(15),
@@ -39,9 +39,9 @@ class MediaListItem extends ConsumerWidget {
                   ? QueryArtworkWidget(
                       id: int.parse(file.id),
                       type: ArtworkType.AUDIO,
-                      nullArtworkWidget: const Icon(Icons.music_note_rounded, color: Colors.white54),
+                      nullArtworkWidget: Icon(Icons.music_note_rounded, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
                     )
-                  : const Icon(Icons.play_arrow_rounded, color: Colors.white54, size: 30),
+                  : Icon(Icons.play_arrow_rounded, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), size: 30),
             ),
           ),
         ),
@@ -49,19 +49,19 @@ class MediaListItem extends ConsumerWidget {
           file.title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).colorScheme.onSurface),
         ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4.0),
           child: Text(
             '${file.type == MediaType.audio ? (file.artist ?? "Unknown Artist") : _formatSize(file.size)} • ${_formatDuration(file.duration)}',
-            style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 13),
           ),
         ),
         trailing: IconButton(
           icon: Icon(
             isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-            color: isFavorite ? const Color(0xFFFF003A) : Colors.white.withOpacity(0.3),
+            color: isFavorite ? const Color(0xFFFF003A) : Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
           ),
           onPressed: () => ref.read(favoritesProvider.notifier).toggleFavorite(file.id),
         ),

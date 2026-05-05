@@ -21,11 +21,8 @@ class FolderDetailScreen extends ConsumerWidget {
       : ref.watch(videoByFolderProvider(folder.id));
 
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: Text(folder.name, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(folder.name, style: const TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: filesAsync.when(
         data: (files) => ListView.builder(

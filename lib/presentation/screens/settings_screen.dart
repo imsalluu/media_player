@@ -61,7 +61,7 @@ class SettingsScreen extends ConsumerWidget {
                 const _SettingsTile(
                   icon: Icons.code_rounded,
                   title: 'Developer',
-                  subtitle: 'Senior Flutter Expert (Antigravity)',
+                  subtitle: 'Senior Flutter Expert (Salman Hossain)',
                 ),
                 const SizedBox(height: 60),
                 const Center(

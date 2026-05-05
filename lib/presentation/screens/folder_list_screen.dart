@@ -106,7 +106,7 @@ class _FolderTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
         borderRadius: BorderRadius.circular(20),
       ),
       child: ListTile(
@@ -121,9 +121,9 @@ class _FolderTile extends StatelessWidget {
           ),
           child: Icon(icon, color: const Color(0xFFFF003A)),
         ),
-        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-        subtitle: Text('$count items', style: TextStyle(color: Colors.white.withOpacity(0.5))),
-        trailing: const Icon(Icons.chevron_right, color: Colors.white24),
+        title: Text(name, style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+        subtitle: Text('$count items', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+        trailing: Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
       ),
     ).animate().fadeIn(duration: 400.ms).slideX(begin: 0.1, end: 0);
   }

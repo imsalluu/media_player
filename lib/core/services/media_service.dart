@@ -53,6 +53,8 @@ class MediaService {
     );
 
     List<MediaFile> videos = [];
+    final Set<String> seenIds = {};
+
     for (var path in paths) {
       final List<AssetEntity> assets = await path.getAssetListRange(
         start: 0,
@@ -60,6 +62,9 @@ class MediaService {
       );
 
       for (var asset in assets) {
+        if (seenIds.contains(asset.id)) continue;
+        seenIds.add(asset.id);
+
         final file = await asset.file;
         if (file == null) continue;
 
