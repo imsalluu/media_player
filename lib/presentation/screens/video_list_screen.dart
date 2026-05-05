@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_player/presentation/providers/media_provider.dart';
 import 'package:photo_manager/photo_manager.dart';
@@ -79,11 +81,17 @@ class VideoListScreen extends ConsumerWidget {
                                     future: AssetEntity.fromId(video.id),
                                     builder: (context, snapshot) {
                                       if (snapshot.hasData && snapshot.data != null) {
-                                        return AssetEntityImage(
-                                          snapshot.data!,
-                                          isOriginal: false,
-                                          thumbnailSize: const ThumbnailSize.square(200),
-                                          fit: BoxFit.cover,
+                                        return FutureBuilder<Uint8List?>(
+                                          future: snapshot.data!.thumbnailData,
+                                          builder: (context, thumbSnapshot) {
+                                            if (thumbSnapshot.hasData && thumbSnapshot.data != null) {
+                                              return Image.memory(
+                                                thumbSnapshot.data!,
+                                                fit: BoxFit.cover,
+                                              );
+                                            }
+                                            return Container(color: Colors.grey[800]);
+                                          },
                                         );
                                       }
                                       return Container(color: Colors.grey[800]);
