@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_player/core/services/media_service.dart';
 import 'package:media_player/domain/entities/media_file.dart';
+import 'package:media_player/domain/entities/media_folder.dart';
 
 final mediaServiceProvider = Provider((ref) => MediaService());
 
@@ -66,4 +67,19 @@ final filteredVideoProvider = Provider<AsyncValue<List<MediaFile>>>((ref) {
     }
     return filtered;
   });
+});
+
+final videoFoldersProvider = FutureProvider<List<MediaFolder>>((ref) {
+  return ref.watch(mediaServiceProvider).fetchVideoFolders();
+});
+
+final musicFoldersProvider = FutureProvider<List<MediaFolder>>((ref) {
+  return ref.watch(mediaServiceProvider).fetchAudioFolders();
+});
+final audioByFolderProvider = FutureProvider.family<List<MediaFile>, String>((ref, folderId) {
+  return ref.watch(mediaServiceProvider).fetchAudioByAlbum(folderId);
+});
+
+final videoByFolderProvider = FutureProvider.family<List<MediaFile>, String>((ref, folderId) {
+  return ref.watch(mediaServiceProvider).fetchVideosByFolder(folderId);
 });

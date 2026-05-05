@@ -1,25 +1,27 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:media_player/core/services/audio_player_service.dart';
+import 'package:media_player/core/services/audio_handler.dart';
+import 'package:audio_service/audio_service.dart';
 
-final audioPlayerServiceProvider = Provider((ref) {
-  final service = AudioPlayerService();
-  ref.onDispose(() => service.dispose());
-  return service;
+// This will be overridden in main.dart
+final audioHandlerProvider = Provider<MyAudioHandler>((ref) {
+  throw UnimplementedError();
 });
 
-// Stream providers for player state
-final playerStateProvider = StreamProvider((ref) {
-  return ref.watch(audioPlayerServiceProvider).player.playerStateStream;
+final playerStateProvider = StreamProvider<PlaybackState>((ref) {
+  final handler = ref.watch(audioHandlerProvider);
+  return handler.playbackState.stream;
 });
 
-final currentSongIndexProvider = StreamProvider((ref) {
-  return ref.watch(audioPlayerServiceProvider).player.currentIndexStream;
+final currentMediaItemProvider = StreamProvider<MediaItem?>((ref) {
+  final handler = ref.watch(audioHandlerProvider);
+  return handler.mediaItem.stream;
 });
 
-final positionProvider = StreamProvider((ref) {
-  return ref.watch(audioPlayerServiceProvider).player.positionStream;
+final positionProvider = StreamProvider<Duration>((ref) {
+  return AudioService.position;
 });
 
-final durationProvider = StreamProvider((ref) {
-  return ref.watch(audioPlayerServiceProvider).player.durationStream;
+final durationProvider = Provider<Duration?>((ref) {
+  final item = ref.watch(currentMediaItemProvider).value;
+  return item?.duration;
 });

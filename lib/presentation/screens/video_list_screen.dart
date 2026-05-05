@@ -1,11 +1,10 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_player/presentation/providers/media_provider.dart';
-import 'package:photo_manager/photo_manager.dart';
-import 'package:photo_manager_image_provider/photo_manager_image_provider.dart';
 import 'package:media_player/presentation/screens/video_player_screen.dart';
+import 'package:photo_manager/photo_manager.dart';
 
 class VideoListScreen extends ConsumerWidget {
   const VideoListScreen({super.key});
@@ -13,185 +12,116 @@ class VideoListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final videoAsync = ref.watch(filteredVideoProvider);
-    final searchController = TextEditingController(text: ref.read(searchQueryProvider));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Videos'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.sort),
-            onPressed: () => _showSortDialog(context, ref),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: searchController,
-              decoration: InputDecoration(
-                hintText: 'Search videos...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
-              ),
-              onChanged: (value) => ref.read(searchQueryProvider.notifier).state = value,
+      body: SafeArea(
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              floating: true,
+              pinned: false,
+              title: const Text('Cinematics', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+              actions: [
+                IconButton(icon: const Icon(Icons.search), onPressed: () {}),
+                const SizedBox(width: 8),
+              ],
             ),
-          ),
-          Expanded(
-            child: videoAsync.when(
-              data: (videos) {
-                if (videos.isEmpty) {
-                  return const Center(child: Text('No videos found'));
-                }
-                return GridView.builder(
-                  padding: const EdgeInsets.all(8),
+            videoAsync.when(
+              data: (videos) => SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+                sliver: SliverGrid(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                    childAspectRatio: 1.2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 0.8,
                   ),
-                  itemCount: videos.length,
-                  itemBuilder: (context, index) {
-                    final video = videos[index];
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => VideoPlayerScreen(video: video),
-                          ),
-                        );
-                      },
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  FutureBuilder<AssetEntity?>(
-                                    future: AssetEntity.fromId(video.id),
-                                    builder: (context, snapshot) {
-                                      if (snapshot.hasData && snapshot.data != null) {
-                                        return FutureBuilder<Uint8List?>(
-                                          future: snapshot.data!.thumbnailData,
-                                          builder: (context, thumbSnapshot) {
-                                            if (thumbSnapshot.hasData && thumbSnapshot.data != null) {
-                                              return Image.memory(
-                                                thumbSnapshot.data!,
-                                                fit: BoxFit.cover,
-                                              );
-                                            }
-                                            return Container(color: Colors.grey[800]);
-                                          },
-                                        );
-                                      }
-                                      return Container(color: Colors.grey[800]);
-                                    },
-                                  ),
-                                  const Center(
-                                    child: Icon(Icons.play_circle_fill, size: 40, color: Colors.white70),
-                                  ),
-                                  Positioned(
-                                    bottom: 4,
-                                    right: 4,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: Colors.black54,
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        _formatDuration(video.duration),
-                                        style: const TextStyle(color: Colors.white, fontSize: 10),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final video = videos[index];
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => VideoPlayerScreen(
+                                videos: videos,
+                                initialIndex: index,
                               ),
                             ),
+                          );
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(25),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            video.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      FutureBuilder<AssetEntity?>(
+                                        future: AssetEntity.fromId(video.id),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.hasData && snapshot.data != null) {
+                                            return FutureBuilder<Uint8List?>(
+                                              future: snapshot.data!.thumbnailData,
+                                              builder: (context, thumbSnapshot) {
+                                                if (thumbSnapshot.hasData && thumbSnapshot.data != null) {
+                                                  return Image.memory(thumbSnapshot.data!, fit: BoxFit.cover);
+                                                }
+                                                return Container(color: Colors.white10);
+                                              },
+                                            );
+                                          }
+                                          return Container(color: Colors.white10);
+                                        },
+                                      ),
+                                      const Center(
+                                        child: Icon(Icons.play_circle_outline, size: 40, color: Colors.white70),
+                                      ),
+                                      Positioned(
+                                        bottom: 10,
+                                        right: 10,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
+                                          child: Text(_formatDuration(video.duration), style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: Text(video.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    );
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(child: Text('Error: $err')),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatDuration(int ms) {
-    final duration = Duration(milliseconds: ms);
-    final minutes = duration.inMinutes;
-    final seconds = duration.inSeconds.remainder(60);
-    return '$minutes:${seconds.toString().padLeft(2, '0')}';
-  }
-
-  void _showSortDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sort By'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: const Text('Date Added'),
-              leading: Radio<SortOption>(
-                value: SortOption.date,
-                groupValue: ref.watch(sortOptionProvider),
-                onChanged: (val) {
-                  ref.read(sortOptionProvider.notifier).state = val!;
-                  Navigator.pop(context);
-                },
+                        ),
+                      ).animate().fadeIn(delay: (50 * index).ms).scale(begin: const Offset(0.9, 0.9));
+                    },
+                    childCount: videos.length,
+                  ),
+                ),
               ),
-            ),
-            ListTile(
-              title: const Text('Name'),
-              leading: Radio<SortOption>(
-                value: SortOption.name,
-                groupValue: ref.watch(sortOptionProvider),
-                onChanged: (val) {
-                  ref.read(sortOptionProvider.notifier).state = val!;
-                  Navigator.pop(context);
-                },
-              ),
-            ),
-            ListTile(
-              title: const Text('Size'),
-              leading: Radio<SortOption>(
-                value: SortOption.size,
-                groupValue: ref.watch(sortOptionProvider),
-                onChanged: (val) {
-                  ref.read(sortOptionProvider.notifier).state = val!;
-                  Navigator.pop(context);
-                },
-              ),
+              loading: () => const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
+              error: (err, stack) => SliverFillRemaining(child: Center(child: Text('Error: $err'))),
             ),
           ],
         ),
       ),
     );
+  }
+
+  String _formatDuration(int ms) {
+    final d = Duration(milliseconds: ms);
+    return '${d.inMinutes}:${d.inSeconds.remainder(60).toString().padLeft(2, '0')}';
   }
 }

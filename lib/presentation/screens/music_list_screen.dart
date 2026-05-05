@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_player/presentation/providers/media_provider.dart';
 import 'package:media_player/presentation/widgets/media_list_item.dart';
 import 'package:media_player/presentation/providers/audio_player_provider.dart';
 import 'package:media_player/presentation/screens/audio_player_screen.dart';
-
+import 'package:media_player/domain/entities/media_file.dart';
+import 'package:audio_service/audio_service.dart';
+import 'package:on_audio_query/on_audio_query.dart';
 
 class MusicListScreen extends ConsumerWidget {
   const MusicListScreen({super.key});
@@ -15,60 +18,76 @@ class MusicListScreen extends ConsumerWidget {
     final searchController = TextEditingController(text: ref.read(searchQueryProvider));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Music'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.sort),
-            onPressed: () => _showSortDialog(context, ref),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: searchController,
-              decoration: InputDecoration(
-                hintText: 'Search music...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+      body: SafeArea(
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              floating: true,
+              pinned: false,
+              title: const Text('My Music', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.sort),
+                  onPressed: () => _showSortDialog(context, ref),
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
-              ),
-              onChanged: (value) => ref.read(searchQueryProvider.notifier).state = value,
+                const SizedBox(width: 16),
+              ],
             ),
-          ),
-          Expanded(
-            child: audioAsync.when(
-              data: (songs) {
-                if (songs.isEmpty) {
-                  return const Center(child: Text('No music found'));
-                }
-                return ListView.builder(
-                  itemCount: songs.length,
-                  itemBuilder: (context, index) {
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: TextField(
+                  controller: searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search your mobile music...',
+                    prefixIcon: const Icon(Icons.search),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.05),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+                  ),
+                  onChanged: (value) => ref.read(searchQueryProvider.notifier).state = value,
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: _FeaturedSection(audioAsync: audioAsync),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+                child: const Text('Recent Tracks', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              ),
+            ),
+            audioAsync.when(
+              data: (songs) => SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
                     final song = songs[index];
                     return MediaListItem(
                       file: song,
                       onTap: () {
-                        ref.read(audioPlayerServiceProvider).setPlaylist(songs, index);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const AudioPlayerScreen()),
-                        );
+                        final items = songs.map((s) => MediaItem(
+                          id: s.path,
+                          album: s.album,
+                          title: s.title,
+                          artist: s.artist,
+                          duration: Duration(milliseconds: s.duration),
+                          extras: {'id': s.id},
+                        )).toList();
+                        ref.read(audioHandlerProvider).setPlaylist(items, index);
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => const AudioPlayerScreen()));
                       },
-                    );
+                    ).animate().fadeIn(delay: (50 * index).ms).slideX(begin: 0.1, end: 0);
                   },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(child: Text('Error: $err')),
+                  childCount: songs.length,
+                ),
+              ),
+              loading: () => const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator())),
+              error: (err, stack) => SliverToBoxAdapter(child: Center(child: Text('Error: $err'))),
             ),
-          ),
-        ],
+            const SliverToBoxAdapter(child: SizedBox(height: 120)),
+          ],
+        ),
       ),
     );
   }
@@ -77,46 +96,127 @@ class MusicListScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Sort By'),
+        backgroundColor: const Color(0xFF121212),
+        title: const Text('Sort By', style: TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              title: const Text('Date Added'),
-              leading: Radio<SortOption>(
-                value: SortOption.date,
-                groupValue: ref.watch(sortOptionProvider),
-                onChanged: (val) {
-                  ref.read(sortOptionProvider.notifier).state = val!;
-                  Navigator.pop(context);
-                },
-              ),
-            ),
-            ListTile(
-              title: const Text('Name'),
-              leading: Radio<SortOption>(
-                value: SortOption.name,
-                groupValue: ref.watch(sortOptionProvider),
-                onChanged: (val) {
-                  ref.read(sortOptionProvider.notifier).state = val!;
-                  Navigator.pop(context);
-                },
-              ),
-            ),
-            ListTile(
-              title: const Text('Size'),
-              leading: Radio<SortOption>(
-                value: SortOption.size,
-                groupValue: ref.watch(sortOptionProvider),
-                onChanged: (val) {
-                  ref.read(sortOptionProvider.notifier).state = val!;
-                  Navigator.pop(context);
-                },
-              ),
-            ),
+            _SortOption(label: 'Date Added', option: SortOption.date),
+            _SortOption(label: 'Name', option: SortOption.name),
+            _SortOption(label: 'Size', option: SortOption.size),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SortOption extends ConsumerWidget {
+  final String label;
+  final SortOption option;
+  const _SortOption({required this.label, required this.option});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentSort = ref.watch(sortOptionProvider);
+    return ListTile(
+      title: Text(label, style: const TextStyle(color: Colors.white)),
+      leading: Radio<SortOption>(
+        value: option,
+        groupValue: currentSort,
+        activeColor: const Color(0xFFFF003A),
+        onChanged: (val) {
+          ref.read(sortOptionProvider.notifier).state = val!;
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+}
+
+class _FeaturedSection extends StatelessWidget {
+  final AsyncValue<List<MediaFile>> audioAsync;
+  const _FeaturedSection({required this.audioAsync});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.0),
+          child: Text('Featured', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 200,
+          child: audioAsync.when(
+            data: (songs) {
+              if (songs.isEmpty) return const SizedBox();
+              return ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: songs.take(5).length,
+                itemBuilder: (context, index) {
+                  final song = songs[index];
+                  return Container(
+                    width: 320,
+                    margin: const EdgeInsets.only(right: 16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(30),
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFFFF003A).withOpacity(0.8),
+                          const Color(0xFF000000),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: QueryArtworkWidget(
+                            id: int.parse(song.id),
+                            type: ArtworkType.AUDIO,
+                            artworkFit: BoxFit.cover,
+                            nullArtworkWidget: const Icon(Icons.music_note, size: 80, color: Colors.white24),
+                          ),
+                        ),
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(30),
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [Colors.black.withOpacity(0.8), Colors.transparent],
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 20,
+                          left: 20,
+                          right: 20,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(song.title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                              Text(song.artist ?? 'Unknown Artist', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13)),
+                            ],
+                          ),
+                        ),
+                        const Center(child: Icon(Icons.play_circle_fill, size: 50, color: Color(0xFFFF003A))),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (_, __) => const SizedBox(),
+          ),
+        ),
+      ],
     );
   }
 }
