@@ -59,6 +59,8 @@ dependencies:
   device_info_plus: ^11.3.0
   package_info_plus: ^8.1.1
   wakelock_plus: ^1.2.11
+  screen_brightness: ^2.1.7
+  volume_controller: ^3.4.4
 
 dev_dependencies:
   flutter_test:

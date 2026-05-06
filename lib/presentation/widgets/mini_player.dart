@@ -105,6 +105,10 @@ class MiniPlayer extends ConsumerWidget {
                           icon: Icon(Icons.skip_next_rounded, color: Theme.of(context).colorScheme.onSurface),
                           onPressed: () => handler.skipToNext(),
                         ),
+                        IconButton(
+                          icon: Icon(Icons.close_rounded, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                          onPressed: () => handler.stop(),
+                        ),
                       ],
                     ),
                   ),

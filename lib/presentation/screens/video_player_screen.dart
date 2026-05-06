@@ -6,6 +6,9 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_player/presentation/providers/favorites_provider.dart';
 import 'package:flutter/services.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:screen_brightness/screen_brightness.dart';
+import 'package:volume_controller/volume_controller.dart';
 
 class VideoPlayerScreen extends ConsumerStatefulWidget {
   final List<MediaFile> videos;
@@ -26,18 +29,34 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   ChewieController? _chewieController;
   late int _currentIndex;
   bool _isFullScreen = false;
+  
+  double _volumeValue = 0.5;
+  double _brightnessValue = 0.5;
+  bool _showOverlay = false;
+  String _overlayText = '';
+  IconData _overlayIcon = Icons.volume_up;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
     _initializePlayer();
+    WakelockPlus.enable();
+    _initVolumeAndBrightness();
+  }
+
+  Future<void> _initVolumeAndBrightness() async {
+    _volumeValue = await VolumeController.instance.getVolume();
+    try {
+      _brightnessValue = await ScreenBrightness().application;
+    } catch (e) {
+      _brightnessValue = 0.5;
+    }
   }
 
   Future<void> _initializePlayer() async {
     final video = widget.videos[_currentIndex];
     
-    // Dispose old controller if switching videos
     if (mounted && _chewieController != null) {
       await _videoPlayerController.dispose();
       _chewieController?.dispose();
@@ -58,10 +77,13 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         bufferedColor: Colors.white24,
       ),
       deviceOrientationsAfterFullScreen: [
-        DeviceOrientation.portraitUp,
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
       ],
       placeholder: Container(color: Colors.black),
       autoInitialize: true,
+      allowMuting: true,
+      showControls: true,
     );
     
     if (mounted) setState(() {});
@@ -92,8 +114,61 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     });
   }
 
+  void _handleVerticalDragUpdate(DragUpdateDetails details) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isLeftSide = details.localPosition.dx < screenWidth / 2;
+    final delta = details.primaryDelta! / -200; // Adjust sensitivity
+
+    if (isLeftSide) {
+      // Volume
+      _volumeValue = (_volumeValue + delta).clamp(0.0, 1.0);
+      VolumeController.instance.setVolume(_volumeValue);
+      _showGestureOverlay(
+        icon: _volumeValue == 0 ? Icons.volume_off : Icons.volume_up,
+        text: '${(_volumeValue * 100).toInt()}%',
+      );
+    } else {
+      // Brightness
+      _brightnessValue = (_brightnessValue + delta).clamp(0.0, 1.0);
+      ScreenBrightness().setApplicationScreenBrightness(_brightnessValue);
+      _showGestureOverlay(
+        icon: Icons.brightness_6,
+        text: '${(_brightnessValue * 100).toInt()}%',
+      );
+    }
+  }
+
+  void _showGestureOverlay({required IconData icon, required String text}) {
+    setState(() {
+      _overlayIcon = icon;
+      _overlayText = text;
+      _showOverlay = true;
+    });
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        setState(() {
+          _showOverlay = false;
+        });
+      }
+    });
+  }
+
+  void _seekForward() {
+    final currentPosition = _videoPlayerController.value.position;
+    final duration = _videoPlayerController.value.duration;
+    final newPosition = currentPosition + const Duration(seconds: 10);
+    
+    if (newPosition < duration) {
+      _videoPlayerController.seekTo(newPosition);
+    } else {
+      _videoPlayerController.seekTo(duration);
+    }
+    _showGestureOverlay(icon: Icons.forward_10, text: '+10s');
+  }
+
   @override
   void dispose() {
+    WakelockPlus.disable();
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     _videoPlayerController.dispose();
     _chewieController?.dispose();
@@ -123,17 +198,39 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         children: [
           Center(
             child: _chewieController != null && _chewieController!.videoPlayerController.value.isInitialized
-                ? Chewie(controller: _chewieController!)
+                ? GestureDetector(
+                    onVerticalDragUpdate: _handleVerticalDragUpdate,
+                    onDoubleTap: _seekForward,
+                    child: Chewie(controller: _chewieController!),
+                  )
                 : const CircularProgressIndicator(color: Color(0xFFFF003A)),
           ),
+          if (_showOverlay)
+            Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(_overlayIcon, color: Colors.white, size: 40),
+                    const SizedBox(height: 8),
+                    Text(_overlayText, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ),
           if (!_isFullScreen)
             Positioned(
               bottom: 40,
               right: 20,
               child: FloatingActionButton(
                 backgroundColor: const Color(0xFFFF003A),
-                child: const Icon(Icons.skip_next_rounded, color: Colors.white),
                 onPressed: _currentIndex < widget.videos.length - 1 ? _nextVideo : null,
+                child: const Icon(Icons.skip_next_rounded, color: Colors.white),
               ),
             ),
         ],
@@ -141,3 +238,4 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     );
   }
 }
+

@@ -58,7 +58,10 @@ class MyAudioHandler extends BaseAudioHandler with SeekHandler {
   Future<void> skipToPrevious() => _player.seekToPrevious();
 
   @override
-  Future<void> stop() => _player.stop();
+  Future<void> stop() async {
+    await _player.stop();
+    mediaItem.add(null);
+  }
 
   Future<void> setPlaylist(List<MediaItem> items, int index) async {
     final playlist = ConcatenatingAudioSource(
